@@ -6,7 +6,7 @@ if (-Not $adminCheck.IsInRole([System.Security.Principal.WindowsBuiltInRole] "Ad
 }
 
 # Winget command to install Power BI Desktop silently
-$packageName = "Microsoft.PowerBIDesktop"
+$packageName = "Microsoft.PowerBI"
 $installArgs = "--silent --accept-package-agreements --accept-source-agreements"
 
 Write-Host "Installing Power BI Desktop..."
