@@ -5,12 +5,24 @@ if (-Not $adminCheck.IsInRole([System.Security.Principal.WindowsBuiltInRole] "Ad
     exit
 }
 
+# Check if Winget is installed
+if (-Not (Get-Command winget -ErrorAction SilentlyContinue)) {
+    Write-Host "Winget is not installed. Please install Winget and try again."
+    exit
+}
+
 # Winget command to install Power BI Desktop silently
 $packageName = "Microsoft.PowerBI"
 $installArgs = "--silent --accept-package-agreements --accept-source-agreements"
 
 Write-Host "Installing Power BI Desktop..."
-Start-Process -FilePath "winget" -ArgumentList "install $packageName $installArgs" -NoNewWindow -Wait
+try {
+    Start-Process -FilePath "winget" -ArgumentList "install $packageName $installArgs" -NoNewWindow -Wait -ErrorAction Stop
+    Write-Host "Power BI Desktop installation command executed."
+} catch {
+    Write-Host "An error occurred during the installation process: $_"
+    exit
+}
 
 # Verify installation
 $installed = winget list | Select-String -Pattern "Power BI Desktop"
