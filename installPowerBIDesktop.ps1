@@ -13,14 +13,28 @@ if (!(Get-EventLog -LogName $LogName -Source $LogSource -ErrorAction SilentlyCon
 # Log the script start
 Write-EventLog -LogName $LogName -Source $LogSource -EntryType Information -EventId 1001 -Message "Power BI installation script started."
 
-# Run Power BI Installation using WinGet
+# Define the URL and the local path for the installer
+$InstallerUrl = "https://download.microsoft.com/download/8/8/0/880bca75-79dd-466a-927d-1abf1f5454b0/PBIDesktopSetup_x64.exe"
+$InstallerPath = "$env:TEMP\PBIDesktopSetup_x64.exe"
+
+# Download the installer
 try {
-    Start-Process -NoNewWindow -Wait -FilePath "winget.exe" -ArgumentList "install --id 9NTXR16HNW1T --source msstore --silent --accept-package-agreements"
+    Invoke-WebRequest -Uri $InstallerUrl -OutFile $InstallerPath
+    Write-EventLog -LogName $LogName -Source $LogSource -EntryType Information -EventId 1005 -Message "Power BI installer downloaded successfully."
+}
+catch {
+    Write-EventLog -LogName $LogName -Source $LogSource -EntryType Error -EventId 1006 -Message "❌ Failed to download Power BI installer: $_"
+    exit
+}
+
+# Run Power BI Installation
+try {
+    Start-Process -FilePath $InstallerPath -ArgumentList "/quiet /norestart" -Wait -NoNewWindow
 
     # Verify Installation Path
     $PowerBI = Get-AppxPackage -Name "Microsoft.MicrosoftPowerBIDesktop"
     if ($PowerBI) {
-        Write-EventLog -LogName $LogName -Source $LogSource -EntryType Information -EventId 1002 -Message "✅ Power BI installed successfully via Microsoft Store."
+        Write-EventLog -LogName $LogName -Source $LogSource -EntryType Information -EventId 1002 -Message "✅ Power BI installed successfully."
     } 
     else {
         Write-EventLog -LogName $LogName -Source $LogSource -EntryType Warning -EventId 1003 -Message "⚠️ Power BI installation not found."
@@ -28,4 +42,10 @@ try {
 }
 catch {
     Write-EventLog -LogName $LogName -Source $LogSource -EntryType Error -EventId 1004 -Message "❌ Power BI installation failed: $_"
+}
+finally {
+    # Clean up the installer
+    if (Test-Path $InstallerPath) {
+        Remove-Item -Path $InstallerPath -Force
+    }
 }
